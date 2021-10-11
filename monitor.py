@@ -58,7 +58,7 @@ def ahuBackEndApiTest() -> int:
 
     for url in urls:
         try:
-            httpGetApiTest200StatusCode(urls)
+            httpGetApiTest200StatusCode(url)
             print(f"接口测试通过, url=[{url}], [{datetime.now()}]")
             return 0
         except BaseHttpApiError as error:
