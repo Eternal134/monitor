@@ -1,9 +1,11 @@
 from apscheduler.schedulers.blocking import BlockingScheduler
-from datetime import datetime
+from datetime import date, datetime, time
 
 import requests
+import time
 
 from exceptions.http_api_error import HttpApiIncorrectStatusCodeError, HttpApiIncorrectDataError, BaseHttpApiError
+import notify
 
 
 def httpApiTestTemplate(url: str, method: str, headers: dict = None,
@@ -47,20 +49,44 @@ def httpGetApiTest200StatusCode(url: str):
     httpApiTestTemplate(url, method='GET')
 
 
+def ahuBackEndApiTest() -> int:
+    """ 安大通后端接口测试 """
+
+    url1 = "https://ahuer.cn/api"
+    url2 = ""
+    urls = [url1]
+
+    for url in urls:
+        try:
+            httpGetApiTest200StatusCode(urls)
+            print(f"接口测试通过, url=[{url}], [{datetime.now()}]")
+            return 0
+        except BaseHttpApiError as error:
+            msg = {error.message}
+            print(f"接口测试出现异常, message={msg}, [{datetime.now()}]")
+            notify.sendMonitorEmail(msg)
+            return -1
+
+
 def ahuBackEndApiMonitor():
-    """ 安大通后端接口监控 """
 
-    # 后端域名
-    backEndDomain = "https://ahuer.cn/"
-    # 测试接口地址
-    helloApiUrl = "api/"
+    # 间隔时间的基数初始值
+    timeSplitRadixInit = 2
+    # 间隔时间的基数
+    timeSplitRadix = timeSplitRadixInit
 
-    try:
-        url = backEndDomain+helloApiUrl
-        httpGetApiTest200StatusCode(url)
-        print(f"接口测试通过, url=[{url}], [{datetime.now()}]")
-    except BaseHttpApiError as error:
-        print(f"接口测试出现异常, message={error.message}, [{datetime.now()}]")
+    while True:
+
+        apiTestRes = ahuBackEndApiTest()
+        # 如果测试结果是不通过
+        if apiTestRes != 0:
+            # 间隔时间的基数加1
+            timeSplitRadix += 1
+        else:
+            # 否则重置
+            timeSplitRadix = timeSplitRadixInit
+        # 暂停4的基数次方秒再测试
+        time.sleep(4**timeSplitRadix)
 
 
 if __name__ == '__main__':
@@ -68,7 +94,7 @@ if __name__ == '__main__':
     scheduler = BlockingScheduler()
 
     try:
-        scheduler.add_job(ahuBackEndApiMonitor, 'interval', seconds=3)
+        scheduler.add_job(ahuBackEndApiMonitor, 'date')
         scheduler.start()
         print("***** 定时调度任务启动 ***** ")
     except (SystemExit, KeyboardInterrupt):
