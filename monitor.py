@@ -1,4 +1,5 @@
 from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import date, datetime, time
 
 import requests
@@ -6,6 +7,7 @@ import time
 
 from exceptions.http_api_error import HttpApiIncorrectStatusCodeError, HttpApiIncorrectDataError, BaseHttpApiError
 import notify
+import threading
 
 
 def httpApiTestTemplate(url: str, method: str, headers: dict = None,
@@ -51,21 +53,20 @@ def httpGetApiTest200StatusCode(url: str):
 
 def ahuBackEndApiTest() -> int:
     """ 安大通后端接口测试 """
-
-    url1 = "https://ahuer.cn/api"
-    url2 = ""
-    urls = [url1]
-
+    
+    urls = ["http://1.15.150.206:5000/", "https://ahuer.cn/api"]
+    
     for url in urls:
+
         try:
             httpGetApiTest200StatusCode(url)
             print(f"接口测试通过, url=[{url}], [{datetime.now()}]")
-            return 0
         except BaseHttpApiError as error:
-            msg = {error.message}
+            msg = error.message
             print(f"接口测试出现异常, message={msg}, [{datetime.now()}]")
             notify.sendMonitorEmail(msg)
             return -1
+    return 0
 
 
 def ahuBackEndApiMonitor():
@@ -94,8 +95,8 @@ if __name__ == '__main__':
     scheduler = BlockingScheduler()
 
     try:
-        scheduler.add_job(ahuBackEndApiMonitor, 'date')
-        scheduler.start()
+        scheduler.add_job(ahuBackEndApiMonitor(), 'date')
         print("***** 定时调度任务启动 ***** ")
+        scheduler.start()
     except (SystemExit, KeyboardInterrupt):
         print("application已被强制结束")

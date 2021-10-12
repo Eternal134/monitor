@@ -25,7 +25,7 @@ def sendMonitorEmail(content: str):
     s.connect(host=host, port=25)
 
     loginRes = s.login(user=myEmail, password=authorize)
-    print(f'登陆结果:{loginRes}')
+    # print(f'登陆结果:{loginRes}')
     s.send_message(msg)
     s.quit
 

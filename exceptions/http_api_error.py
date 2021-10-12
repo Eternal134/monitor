@@ -6,9 +6,9 @@ class BaseHttpApiError(BaseException):
 
     def __init__(self, url, message):
         # 测试的http接口
-        self.url = ""
+        self.url = url
         # 描述信息
-        self.message = ""
+        self.message = message
 
 
 class HttpApiIncorrectDataError(BaseHttpApiError):
